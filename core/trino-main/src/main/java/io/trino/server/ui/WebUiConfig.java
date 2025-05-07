@@ -14,11 +14,13 @@
 package io.trino.server.ui;
 
 import io.airlift.configuration.Config;
+import jakarta.validation.constraints.NotEmpty;
 
 public class WebUiConfig
 {
     private boolean enabled = true;
     private boolean previewEnabled;
+    private String historyServerUrl;
 
     public boolean isEnabled()
     {
@@ -28,6 +30,12 @@ public class WebUiConfig
     public boolean isPreviewEnabled()
     {
         return previewEnabled;
+    }
+
+    @NotEmpty
+    public String getHistoryServerUrl()
+    {
+        return historyServerUrl;
     }
 
     @Config("web-ui.enabled")
@@ -41,6 +49,13 @@ public class WebUiConfig
     public WebUiConfig setPreviewEnabled(boolean previewEnabled)
     {
         this.previewEnabled = previewEnabled;
+        return this;
+    }
+
+    @Config("web-ui.history-server.url")
+    public WebUiConfig setHistoryServerUrl(String historyServerUrl)
+    {
+        this.historyServerUrl = historyServerUrl;
         return this;
     }
 }
