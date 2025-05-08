@@ -32,7 +32,6 @@ public class WebUiConfig
         return previewEnabled;
     }
 
-    @NotEmpty
     public String getHistoryServerUrl()
     {
         return historyServerUrl;

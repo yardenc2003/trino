@@ -20,6 +20,7 @@ import io.airlift.http.client.Request;
 import io.airlift.http.client.StringResponseHandler;
 import io.airlift.log.Logger;
 import io.trino.dispatcher.DispatchManager;
+import io.trino.execution.QueryInfo;
 import io.trino.execution.QueryState;
 import io.trino.security.AccessControl;
 import io.trino.server.BasicQueryInfo;
@@ -30,6 +31,7 @@ import io.trino.server.security.ResourceSecurity;
 import io.trino.spi.QueryId;
 import io.trino.spi.TrinoException;
 import io.trino.spi.security.AccessDeniedException;
+import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
@@ -48,12 +50,14 @@ import java.net.URI;
 import java.util.List;
 import java.util.Locale;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.http.client.StringResponseHandler.createStringResponseHandler;
 import static io.trino.connector.system.KillQueryProcedure.createKillQueryException;
 import static io.trino.connector.system.KillQueryProcedure.createPreemptQueryException;
 import static io.trino.security.AccessControlUtil.checkCanKillQueryOwnedBy;
+import static io.trino.security.AccessControlUtil.checkCanViewQueryOwnedBy;
 import static io.trino.security.AccessControlUtil.filterQueries;
 import static io.trino.server.security.ResourceSecurity.AccessType.WEB_UI;
 import static java.util.Objects.requireNonNull;
@@ -67,7 +71,7 @@ public class UiQueryResource
     private final AccessControl accessControl;
     private final HttpRequestSessionContextFactory sessionContextFactory;
     private final HttpClient httpClient;
-    private final String historyServerUrl;
+    @Nullable private final String historyServerUrl;
 
     @Inject
     public UiQueryResource(DispatchManager dispatchManager, AccessControl accessControl, HttpRequestSessionContextFactory sessionContextFactory, @ForWebUi HttpClient httpClient, WebUiConfig webUiConfig)
@@ -76,7 +80,7 @@ public class UiQueryResource
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
         this.sessionContextFactory = requireNonNull(sessionContextFactory, "sessionContextFactory is null");
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
-        this.historyServerUrl = requireNonNull(webUiConfig.getHistoryServerUrl(), "history server url is null");
+        this.historyServerUrl = webUiConfig.getHistoryServerUrl();
     }
 
     @GET
@@ -100,11 +104,28 @@ public class UiQueryResource
     @Path("{queryId}")
     public Response getQueryInfo(@PathParam("queryId") QueryId queryId, @Context HttpServletRequest servletRequest, @Context HttpHeaders httpHeaders)
     {
-        Logger log = Logger.get(UiQueryResource.class);
         requireNonNull(queryId, "queryId is null");
 
-        // Patch: performing an HTTP request to our REST history server for the complete query info (JSON)
-        URI address = getHistoryServertQueryUri(queryId);
+        // Patch: performing an HTTP request to REST history server for historical query info (JSON)
+        if (historyServerUrl != null){
+            return getQueryInfoFromHistoryServer(queryId);
+        }
+
+        Optional<QueryInfo> queryInfo = dispatchManager.getFullQueryInfo(queryId);
+        if (queryInfo.isPresent()) {
+            try {
+                checkCanViewQueryOwnedBy(sessionContextFactory.extractAuthorizedIdentity(servletRequest, httpHeaders), queryInfo.get().getSession().toIdentity(), accessControl);
+                return Response.ok(queryInfo.get().pruneDigests()).build();
+            }
+            catch (AccessDeniedException e) {
+                throw new ForbiddenException();
+            }
+        }
+        throw new GoneException();
+    }
+
+    private Response getQueryInfoFromHistoryServer(QueryId queryId){
+        URI address = URI.create(historyServerUrl + "/ui/api/query/" + queryId.toString());
         Request request = prepareGet().setUri(address).build();
         StringResponseHandler.StringResponse response;
 
@@ -122,11 +143,6 @@ public class UiQueryResource
         }
 
         return Response.ok(response.getBody(), MediaType.APPLICATION_JSON).build();
-    }
-
-    private URI getHistoryServertQueryUri(QueryId queryId)
-    {
-        return URI.create(historyServerUrl + "/ui/api/query/" + queryId.toString());
     }
 
     @PUT
