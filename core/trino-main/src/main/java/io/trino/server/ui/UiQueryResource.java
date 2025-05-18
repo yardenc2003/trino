@@ -18,7 +18,6 @@ import com.google.inject.Inject;
 import io.airlift.http.client.HttpClient;
 import io.airlift.http.client.Request;
 import io.airlift.http.client.StringResponseHandler;
-import io.airlift.log.Logger;
 import io.trino.dispatcher.DispatchManager;
 import io.trino.execution.QueryInfo;
 import io.trino.execution.QueryState;
@@ -72,6 +71,7 @@ public class UiQueryResource
     private final HttpRequestSessionContextFactory sessionContextFactory;
     private final HttpClient httpClient;
     @Nullable private final String historyServerUrl;
+    @Nullable private final String historyQueryPath;
 
     @Inject
     public UiQueryResource(DispatchManager dispatchManager, AccessControl accessControl, HttpRequestSessionContextFactory sessionContextFactory, @ForWebUi HttpClient httpClient, WebUiConfig webUiConfig)
@@ -81,6 +81,7 @@ public class UiQueryResource
         this.sessionContextFactory = requireNonNull(sessionContextFactory, "sessionContextFactory is null");
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
         this.historyServerUrl = webUiConfig.getHistoryServerUrl();
+        this.historyQueryPath = webUiConfig.getHistoryQueryPath();
     }
 
     @GET
@@ -107,7 +108,7 @@ public class UiQueryResource
         requireNonNull(queryId, "queryId is null");
 
         // Patch: performing an HTTP request to REST history server for historical query info (JSON)
-        if (historyServerUrl != null){
+        if (historyServerUrl != null) {
             return getQueryInfoFromHistoryServer(queryId);
         }
 
@@ -124,8 +125,9 @@ public class UiQueryResource
         throw new GoneException();
     }
 
-    private Response getQueryInfoFromHistoryServer(QueryId queryId){
-        URI address = URI.create(historyServerUrl + "/ui/api/query/" + queryId.toString());
+    private Response getQueryInfoFromHistoryServer(QueryId queryId)
+    {
+        URI address = URI.create(historyServerUrl + historyQueryPath + queryId.toString());
         Request request = prepareGet().setUri(address).build();
         StringResponseHandler.StringResponse response;
 

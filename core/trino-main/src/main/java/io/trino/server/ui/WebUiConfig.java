@@ -14,7 +14,6 @@
 package io.trino.server.ui;
 
 import io.airlift.configuration.Config;
-import jakarta.validation.constraints.NotEmpty;
 
 public class WebUiConfig
 {
