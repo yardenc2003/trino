@@ -20,6 +20,7 @@ public class WebUiConfig
     private boolean enabled = true;
     private boolean previewEnabled;
     private String historyServerUrl;
+    private String historyQueryPath;
 
     public boolean isEnabled()
     {
@@ -34,6 +35,11 @@ public class WebUiConfig
     public String getHistoryServerUrl()
     {
         return historyServerUrl;
+    }
+
+    public String getHistoryQueryPath()
+    {
+        return historyQueryPath;
     }
 
     @Config("web-ui.enabled")
@@ -54,6 +60,13 @@ public class WebUiConfig
     public WebUiConfig setHistoryServerUrl(String historyServerUrl)
     {
         this.historyServerUrl = historyServerUrl;
+        return this;
+    }
+
+    @Config("web-ui.history-server.query-path")
+    public WebUiConfig setHistoryQueryPath(String historyQueryPath)
+    {
+        this.historyQueryPath = historyQueryPath;
         return this;
     }
 }
