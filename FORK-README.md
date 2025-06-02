@@ -50,7 +50,7 @@ New releases from that branch are tagged as:
 
 6. Merge the feature branch:
 
-        git checkout trino-history-server-<version>-base
+        git checkout trino-history-server-<version>
 
         git merge feature-xyz
 
