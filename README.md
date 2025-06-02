@@ -48,13 +48,6 @@ development process, and guidelines.
 
 See [CONTRIBUTING](.github/CONTRIBUTING.md) for contribution requirements.
 
-## Security
-
-See the project [security policy](.github/SECURITY.md) for
-information about reporting vulnerabilities.
-
-Trino supports [reproducible builds](https://reproducible-builds.org) as of version 449.
-
 ## Build requirements
 
 * Mac OS X or Linux
@@ -147,3 +140,9 @@ Run a query to see the nodes in the cluster:
 Run a query against the TPCH connector:
 
     SELECT * FROM tpch.tiny.region;
+
+---
+
+> 📢 **Note:** This is a personal fork of Trino, based on release tag `475`, with custom changes.
+>
+> For Docker image build instructions, upgrade process, and fork-specific notes, see [FORK-README.md](./FORK-README.md).
