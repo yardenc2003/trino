@@ -15,6 +15,9 @@ package io.trino.server.ui;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import io.airlift.http.client.HttpClient;
+import io.airlift.http.client.Request;
+import io.airlift.http.client.StringResponseHandler;
 import io.trino.dispatcher.DispatchManager;
 import io.trino.execution.QueryInfo;
 import io.trino.execution.QueryState;
@@ -27,23 +30,29 @@ import io.trino.server.security.ResourceSecurity;
 import io.trino.spi.QueryId;
 import io.trino.spi.TrinoException;
 import io.trino.spi.security.AccessDeniedException;
+import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import static io.airlift.http.client.Request.Builder.prepareGet;
+import static io.airlift.http.client.StringResponseHandler.createStringResponseHandler;
 import static io.trino.connector.system.KillQueryProcedure.createKillQueryException;
 import static io.trino.connector.system.KillQueryProcedure.createPreemptQueryException;
 import static io.trino.security.AccessControlUtil.checkCanKillQueryOwnedBy;
@@ -60,13 +69,19 @@ public class UiQueryResource
     private final DispatchManager dispatchManager;
     private final AccessControl accessControl;
     private final HttpRequestSessionContextFactory sessionContextFactory;
+    private final HttpClient httpClient;
+    @Nullable private final String historyServerUrl;
+    @Nullable private final String historyQueryPath;
 
     @Inject
-    public UiQueryResource(DispatchManager dispatchManager, AccessControl accessControl, HttpRequestSessionContextFactory sessionContextFactory)
+    public UiQueryResource(DispatchManager dispatchManager, AccessControl accessControl, HttpRequestSessionContextFactory sessionContextFactory, @ForWebUi HttpClient httpClient, WebUiConfig webUiConfig)
     {
         this.dispatchManager = requireNonNull(dispatchManager, "dispatchManager is null");
         this.accessControl = requireNonNull(accessControl, "accessControl is null");
         this.sessionContextFactory = requireNonNull(sessionContextFactory, "sessionContextFactory is null");
+        this.httpClient = requireNonNull(httpClient, "httpClient is null");
+        this.historyServerUrl = webUiConfig.getHistoryServerUrl();
+        this.historyQueryPath = webUiConfig.getHistoryQueryPath();
     }
 
     @GET
@@ -92,6 +107,11 @@ public class UiQueryResource
     {
         requireNonNull(queryId, "queryId is null");
 
+        // Patch: performing an HTTP request to REST history server for historical query info (JSON)
+        if (historyServerUrl != null) {
+            return getQueryInfoFromHistoryServer(queryId);
+        }
+
         Optional<QueryInfo> queryInfo = dispatchManager.getFullQueryInfo(queryId);
         if (queryInfo.isPresent()) {
             try {
@@ -103,6 +123,38 @@ public class UiQueryResource
             }
         }
         throw new GoneException();
+    }
+
+    private URI getHistoricalQueryUrl(QueryId queryId)
+    {
+        String path = String.format("%s%s%s",
+                historyServerUrl.endsWith("/") ? historyServerUrl : historyServerUrl + "/",
+                historyQueryPath.startsWith("/") ? historyQueryPath.substring(1) : historyQueryPath,
+                queryId);
+
+        return URI.create(path);
+    }
+
+    private Response getQueryInfoFromHistoryServer(QueryId queryId)
+    {
+        URI address = getHistoricalQueryUrl(queryId);
+        Request request = prepareGet().setUri(address).build();
+        StringResponseHandler.StringResponse response;
+
+        try {
+            response = httpClient.execute(request, createStringResponseHandler());
+        }
+        catch (RuntimeException e) {
+            throw new InternalServerErrorException("Error getting query info from " + address, e);
+        }
+        if (response.getStatusCode() >= 400) {
+            if (response.getStatusCode() == 404 || response.getStatusCode() == 410) {
+                throw new GoneException();
+            }
+            throw new InternalServerErrorException("Unexpected error from history server: " + response.getStatusCode());
+        }
+
+        return Response.ok(response.getBody(), MediaType.APPLICATION_JSON).build();
     }
 
     @PUT
