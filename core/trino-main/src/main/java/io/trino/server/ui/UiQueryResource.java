@@ -125,9 +125,19 @@ public class UiQueryResource
         throw new GoneException();
     }
 
+    private URI getHistoricalQueryUrl(QueryId queryId)
+    {
+        String path = String.format("%s%s%s",
+                historyServerUrl.endsWith("/") ? historyServerUrl : historyServerUrl + "/",
+                historyQueryPath.startsWith("/") ? historyQueryPath.substring(1) : historyQueryPath,
+                queryId);
+
+        return URI.create(path);
+    }
+
     private Response getQueryInfoFromHistoryServer(QueryId queryId)
     {
-        URI address = URI.create(historyServerUrl + historyQueryPath + queryId.toString());
+        URI address = getHistoricalQueryUrl(queryId);
         Request request = prepareGet().setUri(address).build();
         StringResponseHandler.StringResponse response;
 
@@ -137,11 +147,11 @@ public class UiQueryResource
         catch (RuntimeException e) {
             throw new InternalServerErrorException("Error getting query info from " + address, e);
         }
-        if (response.getStatusCode() == 400) {
-            throw new GoneException();
-        }
-        if (response.getStatusCode() == 500) {
-            throw new InternalServerErrorException();
+        if (response.getStatusCode() >= 400) {
+            if (response.getStatusCode() == 404 || response.getStatusCode() == 410) {
+                throw new GoneException();
+            }
+            throw new InternalServerErrorException("Unexpected error from history server: " + response.getStatusCode());
         }
 
         return Response.ok(response.getBody(), MediaType.APPLICATION_JSON).build();
