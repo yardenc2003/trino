@@ -56,9 +56,9 @@ New releases from that branch are tagged as:
 
 7. Create and push a new tag for the patch release:
 
-        git tag trino-history-server-<version>.1
+        git tag trino-history-server-<version>.2
 
-        git push origin trino-history-server-<version>.1
+        git push origin trino-history-server-<version>.2
 
 ## Building a Forked Custom Docker image
 
@@ -70,16 +70,14 @@ To build a Docker image from your modified Trino fork:
     ./mvnw clean install -DskipTests
     ```
 
-2. Run the custom Docker build script, passing the Trino version you are based on:
+2. Run the custom Docker build script:
 
     ```bash
-    ./core/docker/trino-docker.sh 475
+    ./core/docker/forked-trino-docker.sh
     ```
 
-This will produce two Docker images for different architectures:
+This will produce Docker images for different architectures:
 
-* `trino-history:475-<arch>` — includes the Trino server, all plugins, and default configuration
-
-* `trino-history-core:475-<arch>` — includes only the core server with essential plugins
+* `trino-history-webui:475-<arch>` — a forked Trino Web UI image based on the core Trino server, packaged with essential plugins and history UI support
 
 After the build completes, make sure to tag the image appropriately to reflect the fork version.
