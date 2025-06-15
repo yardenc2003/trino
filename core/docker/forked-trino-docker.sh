@@ -6,6 +6,7 @@ TRINO_VERSION=${1:-475}
 FORK_VERSION=${2:-475.2}
 architectures=(arm64)
 package=trino-server-core
+architectures=(amd64 arm64 ppc64le)
 tag=trino-history-webui
 
 # Build the image
