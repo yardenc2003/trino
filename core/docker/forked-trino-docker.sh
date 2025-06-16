@@ -4,14 +4,13 @@ set -eux
 
 TRINO_VERSION=${1:-475}
 FORK_VERSION=${2:-475.2}
+ARCHITECTURE=${3:-amd64}
 architectures=(amd64 arm64 ppc64le)
 package=trino-server-core
 tag=trino-history-webui
 
-# Build the image
-core/docker/build.sh -a "$(IFS=, ; echo "${architectures[*]}")" -r "$TRINO_VERSION" -p "$package" -t "$tag"
+# Build the image for the specified architecture
+core/docker/build.sh -a "$ARCHITECTURE" -r "$TRINO_VERSION" -p "$package" -t "$tag"
 
 # Tag for each architecture
-for arch in "${architectures[@]}"; do
-    docker tag "$tag:$TRINO_VERSION-$arch" "$tag:$FORK_VERSION-$arch"
-done
+docker tag "$tag:$TRINO_VERSION-$ARCHITECTURE" "$tag:$FORK_VERSION-$ARCHITECTURE"

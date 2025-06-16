@@ -70,17 +70,20 @@ To build a Docker image from your modified Trino fork:
     ./mvnw clean install -DskipTests
     ```
 
-2. Run the custom Docker build script. You can **optionally** pass the base Trino version and a custom (forked) version:
+2. Run the custom Docker build script, **optionally** providing the following arguments:
+   - The base Trino version (default: `475`)
+   - A custom fork version (default: `475.2`)
+   - The target architecture (e.g., `amd64`, `arm64`, `ppc64le`)
 
-    ```bash
-    ./core/docker/forked-trino-docker.sh
-    ```
+       ```bash
+       ./core/docker/forked-trino-docker.sh 475 475.2 arm64
+       ```
 
-   Or specify versions explicitly:
+      Or:
 
-    ```bash
-    ./core/docker/forked-trino-docker.sh 475 475.<tag>
-    ```
+       ```bash
+       ./core/docker/forked-trino-docker.sh 475 475.<tag> <arch>
+       ```
 
 This builds a forked Trino Web UI Docker image, based on the core Trino server, bundled with essential plugins and history UI support — available for multiple architectures:
 
