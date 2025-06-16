@@ -17,7 +17,7 @@ In the history server fork, we treat `trino-history-server-<version>` as the for
 New releases from that branch are tagged as:
 
 - `trino-history-server-<version>.1 `
-- `trino-history-server-<version>.2`
+- `trino-history-server-<version>.<tag>`
 
 
 ### Developing a new Feature
@@ -56,9 +56,9 @@ New releases from that branch are tagged as:
 
 7. Create and push a new tag for the patch release:
 
-        git tag trino-history-server-<version>.2
+        git tag trino-history-server-<version>.<tag>
 
-        git push origin trino-history-server-<version>.2
+        git push origin trino-history-server-<version>.<tag>
 
 ## Building a Forked Custom Docker image
 
@@ -79,9 +79,11 @@ To build a Docker image from your modified Trino fork:
    Or specify versions explicitly:
 
     ```bash
-    ./core/docker/forked-trino-docker.sh 475 475.2
+    ./core/docker/forked-trino-docker.sh 475 475.<tag>
     ```
 
-This will produce Docker images for different architectures:
+This builds a forked Trino Web UI Docker image, based on the core Trino server, bundled with essential plugins and history UI support — available for multiple architectures:
 
-* `trino-history-webui:475-<arch>` — a forked Trino Web UI image based on the core Trino server, packaged with essential plugins and history UI support
+- `trino-history-webui:475.<tag>-amd64`
+- `trino-history-webui:475.<tag>-arm64`
+- `trino-history-webui:475.<tag>-ppc64le`
