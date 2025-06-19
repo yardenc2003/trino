@@ -17,7 +17,7 @@ In the history server fork, we treat `trino-history-server-<version>` as the for
 New releases from that branch are tagged as:
 
 - `trino-history-server-<version>.1 `
-- `trino-history-server-<version>.2`
+- `trino-history-server-<version>.<tag>`
 
 
 ### Developing a new Feature
@@ -56,9 +56,9 @@ New releases from that branch are tagged as:
 
 7. Create and push a new tag for the patch release:
 
-        git tag trino-history-server-<version>.1
+        git tag trino-history-server-<version>.<tag>
 
-        git push origin trino-history-server-<version>.1
+        git push origin trino-history-server-<version>.<tag>
 
 ## Building a Forked Custom Docker image
 
@@ -70,16 +70,23 @@ To build a Docker image from your modified Trino fork:
     ./mvnw clean install -DskipTests
     ```
 
-2. Run the custom Docker build script, passing the Trino version you are based on:
+2. Run the custom Docker build script, **optionally** providing the following arguments:
+   - The base Trino version (default: `475`)
+   - A custom fork version (default: `475.2`)
+   - The target architecture (e.g., `amd64`, `arm64`, `ppc64le`)
 
-    ```bash
-    ./core/docker/trino-docker.sh 475
-    ```
+       ```bash
+       ./core/docker/forked-trino-docker.sh
+       ```
 
-This will produce two Docker images for different architectures:
+      Or:
 
-* `trino-history:475-<arch>` — includes the Trino server, all plugins, and default configuration
+       ```bash
+       ./core/docker/forked-trino-docker.sh 475 475.<tag> <arch>
+       ```
 
-* `trino-history-core:475-<arch>` — includes only the core server with essential plugins
+This builds a forked Trino Web UI Docker image, based on the core Trino server, bundled with essential plugins and history UI support — available for multiple architectures:
 
-After the build completes, make sure to tag the image appropriately to reflect the fork version.
+- `trino-history-webui:475.<tag>-amd64`
+- `trino-history-webui:475.<tag>-arm64`
+- `trino-history-webui:475.<tag>-ppc64le`
