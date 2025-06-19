@@ -76,7 +76,7 @@ To build a Docker image from your modified Trino fork:
    - The target architecture (e.g., `amd64`, `arm64`, `ppc64le`)
 
        ```bash
-       ./core/docker/forked-trino-docker.sh 475 475.2 arm64
+       ./core/docker/forked-trino-docker.sh
        ```
 
       Or:
