@@ -2,8 +2,8 @@
 
 set -eux
 
-TRINO_VERSION=${1:-475}
-FORK_VERSION=${2:-475.2}
+TRINO_VERSION=${1:-483}
+FORK_VERSION=${2:-483.0}
 ARCHITECTURE=${3:-amd64}
 architectures=(amd64 arm64 ppc64le)
 package=trino-server-core
