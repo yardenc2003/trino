@@ -18,6 +18,7 @@ import com.google.inject.Scopes;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 
 import static io.airlift.configuration.ConfigBinder.configBinder;
+import static io.airlift.http.client.HttpClientBinder.httpClientBinder;
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
 
 public class WebUiModule
@@ -35,6 +36,7 @@ public class WebUiModule
             jaxrsBinder(binder).bind(ClusterResource.class);
             jaxrsBinder(binder).bind(ClusterStatsResource.class);
             jaxrsBinder(binder).bind(UiQueryResource.class);
+            httpClientBinder(binder).bindHttpClient("web-ui", ForWebUi.class);
 
             if (buildConfigObject(WebUiConfig.class).isPreviewEnabled()) {
                 install(new WebUiPreviewModule());
