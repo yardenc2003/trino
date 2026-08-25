@@ -18,28 +18,28 @@ import io.airlift.configuration.Config;
 public class WebUiConfig
 {
     private boolean enabled = true;
-    private boolean previewEnabled = true;
-    private boolean legacyEnabled;
+    private boolean previewEnabled;
+    private String historyServerUrl;
+    private String historyQueryPath;
 
     public boolean isEnabled()
     {
         return enabled;
     }
 
-    @Deprecated
     public boolean isPreviewEnabled()
     {
         return previewEnabled;
     }
 
-    public boolean isLegacyEnabled()
+    public String getHistoryServerUrl()
     {
-        return legacyEnabled;
+        return historyServerUrl;
     }
 
-    public boolean isLegacyUiAvailable()
+    public String getHistoryQueryPath()
     {
-        return legacyEnabled || !previewEnabled;
+        return historyQueryPath;
     }
 
     @Config("web-ui.enabled")
@@ -49,7 +49,6 @@ public class WebUiConfig
         return this;
     }
 
-    @Deprecated
     @Config("web-ui.preview.enabled")
     public WebUiConfig setPreviewEnabled(boolean previewEnabled)
     {
@@ -57,10 +56,17 @@ public class WebUiConfig
         return this;
     }
 
-    @Config("web-ui.legacy.enabled")
-    public WebUiConfig setLegacyEnabled(boolean legacyEnabled)
+    @Config("web-ui.history-server.url")
+    public WebUiConfig setHistoryServerUrl(String historyServerUrl)
     {
-        this.legacyEnabled = legacyEnabled;
+        this.historyServerUrl = historyServerUrl;
+        return this;
+    }
+
+    @Config("web-ui.history-server.query-path")
+    public WebUiConfig setHistoryQueryPath(String historyQueryPath)
+    {
+        this.historyQueryPath = historyQueryPath;
         return this;
     }
 }

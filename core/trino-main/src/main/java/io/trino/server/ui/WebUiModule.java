@@ -18,6 +18,7 @@ import com.google.inject.Scopes;
 import io.airlift.configuration.AbstractConfigurationAwareModule;
 
 import static io.airlift.configuration.ConfigBinder.configBinder;
+import static io.airlift.http.client.HttpClientBinder.httpClientBinder;
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
 
 public class WebUiModule
@@ -27,16 +28,19 @@ public class WebUiModule
     protected void setup(Binder binder)
     {
         jaxrsBinder(binder).bind(WebUiStaticResource.class);
-        jaxrsBinder(binder).bind(WebUiLegacyStaticResource.class);
 
         configBinder(binder).bindConfig(WebUiConfig.class);
 
         if (buildConfigObject(WebUiConfig.class).isEnabled()) {
-            install(new WebUiFrontendModule());
-            install(new WebUiLegacyAuthenticationModule());
+            install(new WebUiAuthenticationModule());
             jaxrsBinder(binder).bind(ClusterResource.class);
             jaxrsBinder(binder).bind(ClusterStatsResource.class);
             jaxrsBinder(binder).bind(UiQueryResource.class);
+            httpClientBinder(binder).bindHttpClient("web-ui", ForWebUi.class);
+
+            if (buildConfigObject(WebUiConfig.class).isPreviewEnabled()) {
+                install(new WebUiPreviewModule());
+            }
         }
         else {
             binder.bind(WebUiAuthenticationFilter.class).to(DisabledWebUiAuthenticationFilter.class).in(Scopes.SINGLETON);
